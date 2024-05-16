@@ -77,17 +77,18 @@ function generateReturnTypes($matches)
 
 $filename = @$_SERVER['argv'][1];
 if (!is_file($filename)) {
-    error_log('Invalid filename: ' . $filename);
+    echo('Invalid filename: ' . $filename);
     exit(1);
 }
 $input = file_get_contents($filename);
 if ($input === false) {
-    error_log('Error reading ' . $filename);
+    echo('Error reading ' . $filename);
     exit(1);
 }
 
 // Flag to indicate that the file header docblock has been encountered.
 $fileHeaderPassed = false;
+$docBlock = false;
 
 // Parse source file and modify tokens as needed.
 $tokens = token_get_all($input);
@@ -120,6 +121,8 @@ foreach ($tokens as $index => $token) {
                     '{@link $$1}',
                     $content
                 );
+
+
                 // Doxygen's "link" command does not support links to URLs.
                 // Transform inline links.
                 $content = preg_replace_callback(
@@ -164,8 +167,8 @@ foreach ($tokens as $index => $token) {
                             if ($line) {
                                 $warning .= ' around line ' . $line;
                             }
-                            error_log($warning);
-                            continue;
+                            echo($warning);
+                            continue 2;
                         }
                         $content = preg_replace(
                             '/(@var .*)/',
@@ -191,22 +194,51 @@ foreach ($tokens as $index => $token) {
                         $content
                     );
 
+
+                    // Doxygen's @method command is not suitable for PHP's
+                    // magic properties. Rearrange and format line content and
+                    // put it into a @remark section to distinguish it from the
+                    // rest of the class description.
+                    // Back references: $1=type $3=name $4=description
+					$content = preg_replace(
+						//'/@method \s+(\w+)\s+(.*?)\s+(\w+)\((.*?)\)/',
+						//'@link $1::$2',
+						'/@method static ((?:::\w+)+)\|((?:\w+)+) (\w+)\((.*?)\)/',
+						'@see $1::$2::$3($4)',
+
+						$content
+					);
+
+
+
                     // Doxygen's @property command is not suitable for PHP's
                     // magic properties. Rearrange and format line content and
                     // put it into a @remark section to distinguish it from the
                     // rest of the class description.
                     // Back references: $1=type $3=name $4=description
                     $content = preg_replace(
-                        '/@property\s+([\w:]+(\[\])?)\s+\$?(\w+)(.*)/',
+                        '/@property\s+([\w:\|]+(\[\])?)\s+\$?(\w+)(.*)/',
                         '@remark Property <b>$3</b> <em>($1)</em>$4',
+
+                        //'/@property\s+([\w:]+(\[\])?)\s+\|+\$?(\w+)(.*)/',
+                        //'@remark Property <b>$3</b> <em>($1)</em>$4',
+
                         $content
                     );
+
 
                     // Treat @property-read similar to @property, add a
                     // "readonly" marker.
                     $content = preg_replace(
-                        '/@property-read\s+([\w:]+(\[\])?)\s+\$?(\w+)(.*)/',
+                        '/@property-read\s+([\w:\|]+(\[\])?)\s+\$?(\w+)(.*)/',
                         '@remark Property <b>$3</b> <em>($1, readonly)</em>$4',
+                        $content
+                    );
+
+                    // Doxygen's @package command behaves differently. The
+                    $content = preg_replace(
+                        '/@package?\s+([\w\[\]|:]+)/',
+                        '',
                         $content
                     );
 
@@ -223,25 +255,38 @@ foreach ($tokens as $index => $token) {
                         $content
                     );
 
+
+
+
+
                     // Remove braces from inline @inheritdoc because Doxygen
                     // would insert them literally.
                     $content = str_replace('{@inheritdoc}', '@inheritdoc', $content);
                 } else {
                     // This docblock is the file header.
-                    // Insert @file command in the first line to prevent Doxygen
-                    // from interpreting it as documentation for the subsequent
-                    // namespace declaration.
-                    $content = preg_replace("#\n#", " @file\n", $content, 1);
 
+                    if (!$fileHeaderPassed && !str_contains($content, '@file')) {
+                        // Insert @file command in the first line to prevent Doxygen
+                        // from interpreting it as documentation for the subsequent
+                        // namespace declaration.
+
+                        $name_nopath=basename($filename);
+                        $content = preg_replace("#\n#", "/\n* @file $name_nopath\n", $content, 1);
+                    }
                     // Doxygen has no "license" command.
                     $content = str_replace('@license', '@copyright', $content);
                 }
+                $fileHeaderPassed=true; // read the first docbloc
                 break;
             case T_NAMESPACE:
                 // End of file header area
                 $fileHeaderPassed = true;
                 break;
-        }
+                case T_USE:
+                // End of file header area
+                $fileHeaderPassed = true;
+                break;
+            }
         print $content;
     }
 }

@@ -1,7 +1,7 @@
 {
-    "name": "hschletz/doxygen-phpdoc",
+    "name": "bvi106/doxygen-phpdoc",
     "description": "PHPDoc support for Doxygen",
-    "homepage": "https://github.com/hschletz/doxygen-phpdoc",
+    "homepage": "https://github.com/BVI106/doxygen-phpdoc",
     "license": "MIT",
     "authors": [
         {
@@ -10,7 +10,7 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/hschletz/doxygen-phpdoc/issues"
+        "issues": "https://github.com/BVI106/doxygen-phpdoc/issues"
     },
     "bin": [
         "doxygen-phpdoc-filter.php",
