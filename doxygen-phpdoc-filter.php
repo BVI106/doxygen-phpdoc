@@ -204,11 +204,25 @@ foreach ($tokens as $index => $token) {
 						//'/@method \s+(\w+)\s+(.*?)\s+(\w+)\((.*?)\)/',
 						//'@link $1::$2',
 						'/@method static ((?:::\w+)+)\|((?:\w+)+) (\w+)\((.*?)\)/',
-						'@see $1::$2::$3($4)',
+						'@see method $1::$2::$3($4)',
 
 						$content
 					);
 
+
+                    // Doxygen's @minmix command is not suitable for PHP's
+                    // magic properties. Rearrange and format line content and
+                    // put it into a @remark section to distinguish it from the
+                    // rest of the class description.
+                    // Back references: $1=type $3=name $4=description
+					$content = preg_replace(
+						//'/@minmix \s+(\w+)\s+(.*?)\s+(\w+)\((.*?)\)/',
+						//'@link $1::$2',
+						'/@mixin ((?:::\w+)+)/',
+						'@see function $1',
+
+						$content
+					);
 
 
                     // Doxygen's @property command is not suitable for PHP's
