@@ -217,7 +217,7 @@ foreach ($tokens as $index => $token) {
                     // rest of the class description.
                     // Back references: $1=type $3=name $4=description
                     $content = preg_replace(
-                        '/@property\s+([\w:\|]+(\[\])?)\s+\$?(\w+)(.*)/',
+                        '/@property\s+([\w:\|\<,\> ]+(\[\])?)\s+\$?(\w+)(.*)/',
                         '@remark Property <b>$3</b> <em>($1)</em>$4',
 
                         //'/@property\s+([\w:]+(\[\])?)\s+\|+\$?(\w+)(.*)/',
@@ -230,7 +230,7 @@ foreach ($tokens as $index => $token) {
                     // Treat @property-read similar to @property, add a
                     // "readonly" marker.
                     $content = preg_replace(
-                        '/@property-read\s+([\w:\|]+(\[\])?)\s+\$?(\w+)(.*)/',
+                        '/@property-read\s+([\w:\|\<,\> ]+(\[\])?)\s+\$?(\w+)(.*)/',
                         '@remark Property <b>$3</b> <em>($1, readonly)</em>$4',
                         $content
                     );
