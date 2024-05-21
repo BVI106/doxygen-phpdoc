@@ -285,7 +285,7 @@ foreach ($tokens as $index => $token) {
                         // namespace declaration.
 
                         $name_nopath=basename($filename);
-                        $content = preg_replace("#\n#", "/\n* @file $name_nopath\n", $content, 1);
+                        $content = preg_replace("#\n#", "\n* @file $name_nopath\n", $content, 1);
                     }
                     // Doxygen has no "license" command.
                     $content = str_replace('@license', '@copyright', $content);
